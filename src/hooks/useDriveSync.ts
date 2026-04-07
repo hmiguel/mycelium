@@ -110,7 +110,6 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
           ),
         );
 
-        const localTabs = useAppStore.getState().tabs;
         const currentDriveFileIds = useGoogleDriveStore.getState().driveFileIds;
 
         // Build reverse map: driveFileId → tabId
@@ -118,52 +117,22 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
           Object.entries(currentDriveFileIds).map(([tabId, driveId]) => [driveId, Number(tabId)]),
         );
 
-        const reconciledTabs: ITab[] = [...localTabs];
-        let maxId = localTabs.length > 0 ? Math.max(...localTabs.map((t) => t.id)) : -1;
+        // Drive is source of truth — build tab list purely from Drive files
+        let maxId = Object.keys(currentDriveFileIds).length > 0
+          ? Math.max(...Object.keys(currentDriveFileIds).map(Number))
+          : -1;
 
-        for (const content of contents) {
+        const reconciledTabs: ITab[] = contents.map((content) => {
           const existingTabId = driveIdToTabId[content.driveId];
 
           if (existingTabId !== undefined) {
-            // Update existing tab — Drive wins
-            const idx = reconciledTabs.findIndex((t) => t.id === existingTabId);
-            if (idx !== -1) {
-              reconciledTabs[idx] = {
-                ...reconciledTabs[idx],
-                elements: content.elements,
-                appState: content.appState,
-                title: content.title,
-              };
-            }
-          } else {
-            // New Drive file — create a new local tab
-            maxId += 1;
-            const newTab: ITab = {
-              id: maxId,
-              title: content.title,
-              elements: content.elements,
-              appState: content.appState,
-            };
-            reconciledTabs.push(newTab);
-            useGoogleDriveStore.getState().setDriveFileId(maxId, content.driveId);
+            return { id: existingTabId, title: content.title, elements: content.elements, appState: content.appState };
           }
-        }
 
-        // Create Drive files for local tabs that have no mapping yet
-        const updatedDriveFileIds = useGoogleDriveStore.getState().driveFileIds;
-        await Promise.all(
-          reconciledTabs
-            .filter((tab) => !updatedDriveFileIds[tab.id])
-            .map(async (tab) => {
-              const fileId = await createFile(
-                accessToken,
-                resolvedFolderId,
-                `${tab.title}.excalidraw`,
-                tabToFileFormat(tab),
-              );
-              useGoogleDriveStore.getState().setDriveFileId(tab.id, fileId);
-            }),
-        );
+          maxId += 1;
+          useGoogleDriveStore.getState().setDriveFileId(maxId, content.driveId);
+          return { id: maxId, title: content.title, elements: content.elements, appState: content.appState };
+        });
 
         useAppStore.getState().setTabs(reconciledTabs);
         setSyncStatus('idle');
