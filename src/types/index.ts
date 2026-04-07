@@ -12,3 +12,11 @@ export interface AppData {
   tabs: ITab[];
   currentTabId: number;
 }
+
+export interface ExcalidrawFileFormat {
+  type: 'excalidraw';
+  version: 2;
+  title: string;
+  elements: readonly ExcalidrawElement[];
+  appState: Partial<AppState>;
+}
