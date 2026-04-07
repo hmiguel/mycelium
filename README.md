@@ -1,9 +1,7 @@
-# Excalidraw Multi-Tabs
-![Docker Image Version](https://img.shields.io/docker/v/montejojorge/excalidraw-multi-tabs)
-![Docker Image Size (tag)](https://img.shields.io/docker/image-size/montejojorge/excalidraw-multi-tabs/latest)
+# Mycelium
 ![Static Badge](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
-A self-hostable version of Excalidraw with multi-tab support for enhanced drawing workflow.
+A self-hostable version of Excalidraw with multi-tab support and Google Drive sync, inspired by the original work of [MontejoJorge](https://github.com/MontejoJorge/excalidraw-multi-tabs).
 
 
 ![Excalidraw Multi-Tabs Screenshot](https://i.ibb.co/TDcPRRzF/screely-1759180368656.png)
@@ -14,21 +12,50 @@ A self-hostable version of Excalidraw with multi-tab support for enhanced drawin
 🎨 **Full Excalidraw Experience** - All the power of Excalidraw in a tabbed interface  
 📥 **Import from Excalidraw** - Seamlessly import existing Excalidraw drawings  
 💾 **Local Storage** - Your work is automatically saved locally  
-🐳 **Docker Ready** - Easy deployment with Docker support  
+☁️ **Google Drive Sync** - Auto-save and restore your tabs from Google Drive  
 🚀 **Self-Hostable** - Host it yourself for complete control  
 🖼️ **Image suport** - Add images to your draw
+
+## ☁️ Google Drive Sync Setup
+
+Google Drive sync is optional. When enabled, each tab is automatically saved as a `.excalidraw` file in a **Mycelium** folder in the user's Google Drive.
+
+### 1. Google Cloud Console
+
+1. Create a project and enable the **Google Drive API**
+2. Go to **APIs & Services → OAuth consent screen**:
+   - Add scope `https://www.googleapis.com/auth/drive.file`
+   - Add scope `openid email`
+   - Add your domain as an authorized domain
+3. Go to **Credentials → Create OAuth client ID**:
+   - Application type: **Web application**
+   - Authorized JavaScript origins: your app domain
+   - Authorized redirect URIs: your app domain
+
+### 2. Backend (token exchange)
+
+Google requires a backend to securely exchange the OAuth auth code for an access token. Your backend needs one endpoint:
+
+```
+POST /mycelium/auth/token
+Body: { "code": "...", "redirect_uri": "..." }
+Returns: { "access_token": "...", "expires_in": 3600 }
+```
+
+It should exchange the code with Google using your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+### 3. Frontend build variables
+
+```
+VITE_GOOGLE_CLIENT_ID=your-client-id
+VITE_API_URL=https://your-backend-domain
+```
+
+---
 
 ## 🚧 Current Limitations
 
 - [ ] **Link Sharing** – Not possible to share a direct link to a drawing
-
-## 🚀 Quick Start
-
-### Using Docker
-
-```
-docker run -p 3000:80 ghcr.io/montejojorge/excalidraw-multi-tabs
-```
 
 ## 🤝 Contributing
 
