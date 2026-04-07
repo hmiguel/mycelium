@@ -7,6 +7,7 @@ import { useRef } from 'react';
 import { useAppStore } from '../../store';
 import { PlusIcon } from '../icons';
 import ImportModal from '../ImportButton';
+import SyncStatusIndicator from '../SyncStatusIndicator';
 import Tab from '../Tab';
 import style from './style.module.css';
 
@@ -51,6 +52,7 @@ const TabBar = () => {
           <PlusIcon />
         </button>
         <ImportModal />
+        <SyncStatusIndicator />
       </div>
     </>
   );

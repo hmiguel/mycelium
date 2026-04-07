@@ -3,13 +3,16 @@ import type { OrderedExcalidrawElement } from '@excalidraw/excalidraw/element/ty
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
 import { useCallback } from 'react';
 
+import GoogleSignInModal from './components/GoogleSignInModal';
 import TabBar from './components/TabBar';
+import { useDriveSync } from './hooks/useDriveSync';
 import { useAppStore } from './store';
 import { useExcalidrawFilesStore } from './store/excalidrawFiles';
 
 function App() {
   const { tabs, currentTabId, updateTab } = useAppStore();
   const { setFiles, getFiles } = useExcalidrawFilesStore();
+  const { onTabChange } = useDriveSync();
 
   const currentTab = tabs.find((t) => t.id === currentTabId) || tabs[0];
 
@@ -34,9 +37,10 @@ function App() {
 
       updateTab(currentTabId, updatedTab);
       setFiles(files);
+      onTabChange(currentTabId);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [currentTabId],
+    [currentTabId, onTabChange],
   );
 
   if (!currentTab) {
@@ -45,6 +49,7 @@ function App() {
 
   return (
     <>
+      <GoogleSignInModal />
       <TabBar />
       <Excalidraw
         key={currentTabId}
