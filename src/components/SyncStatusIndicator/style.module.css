@@ -2,23 +2,24 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin-left: 4px;
+  margin-left: auto;
+  margin-right: 8px;
 }
 
 .button {
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--border-radius-lg, 6px);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  width: 36px;
+  height: var(--lg-button-size, 2.25rem);
+  width: var(--lg-button-size, 2.25rem);
   padding: 0;
 
   &:hover {
-    background-color: #f1f0ff;
+    background-color: var(--button-hover-bg, #f1f0ff);
   }
 }
 
@@ -52,7 +53,7 @@
 
 .popover {
   position: absolute;
-  top: calc(100% + 6px);
+  bottom: calc(100% + 6px);
   right: 0;
   background: white;
   border: 1px solid #ebebeb;

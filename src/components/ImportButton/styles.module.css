@@ -1,12 +1,16 @@
 .loadButton {
-  background-color: #6965db; /*--color-primary*/
+  background-color: transparent;
   border-radius: 6px;
-  color: white;
+  color: #1b1b1f;
   cursor: pointer;
   font-size: 12px;
+  font-family: Assistant, sans-serif;
   height: 36px;
-  margin-left: auto;
-  padding: 10px;
+  padding: 0 10px;
+
+  &:hover {
+    background-color: #f1f0ff;
+  }
 }
 
 .title {

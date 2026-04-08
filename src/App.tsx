@@ -1,9 +1,11 @@
-import { Excalidraw } from '@excalidraw/excalidraw';
+import { Excalidraw, Footer } from '@excalidraw/excalidraw';
 import type { OrderedExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import GoogleSignInModal from './components/GoogleSignInModal';
+import ImportModal from './components/ImportButton';
+import SyncStatusIndicator from './components/SyncStatusIndicator';
 import TabBar from './components/TabBar';
 import { useDriveSync } from './hooks/useDriveSync';
 import { useAppStore } from './store';
@@ -13,6 +15,13 @@ function App() {
   const { tabs, currentTabId, updateTab } = useAppStore();
   const { setFiles, getFiles } = useExcalidrawFilesStore();
   const { onTabChange } = useDriveSync();
+  const renderTopRightUI = useCallback(() => <ImportModal />, []);
+  const footerContent = useMemo(() => (
+    <Footer>
+      <TabBar />
+      <SyncStatusIndicator />
+    </Footer>
+  ), []);
 
   const currentTab = tabs.find((t) => t.id === currentTabId) || tabs[0];
 
@@ -50,16 +59,20 @@ function App() {
   return (
     <>
       <GoogleSignInModal />
-      <TabBar />
-      <Excalidraw
-        key={currentTabId}
-        onChange={handleOnChange}
-        initialData={async () => ({
-          elements: currentTab.elements,
-          appState: currentTab.appState,
-          files: await getFiles(),
-        })}
-      />
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <Excalidraw
+          key={currentTabId}
+          onChange={handleOnChange}
+          initialData={async () => ({
+            elements: currentTab.elements,
+            appState: currentTab.appState,
+            files: await getFiles(),
+          })}
+          renderTopRightUI={renderTopRightUI}
+        >
+          {footerContent}
+        </Excalidraw>
+      </div>
     </>
   );
 }

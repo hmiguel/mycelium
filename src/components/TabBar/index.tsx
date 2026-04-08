@@ -6,8 +6,6 @@ import { useRef } from 'react';
 
 import { useAppStore } from '../../store';
 import { PlusIcon } from '../icons';
-import ImportModal from '../ImportButton';
-import SyncStatusIndicator from '../SyncStatusIndicator';
 import Tab from '../Tab';
 import style from './style.module.css';
 
@@ -43,16 +41,14 @@ const TabBar = () => {
             {tabs.map((tab, index) => (
               <Tab key={tab.id} tab={tab} index={index} />
             ))}
+            <button
+              className={style.createTabButton}
+              onClick={handleCreateTabBtnClick}
+            >
+              <PlusIcon />
+            </button>
           </div>
         </DragDropProvider>
-        <button
-          className={style.createTabButton}
-          onClick={handleCreateTabBtnClick}
-        >
-          <PlusIcon />
-        </button>
-        <ImportModal />
-        <SyncStatusIndicator />
       </div>
     </>
   );
