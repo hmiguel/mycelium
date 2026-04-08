@@ -15,6 +15,9 @@ import { useAppStore } from '../store';
 import { useGoogleDriveStore } from '../store/googleDriveStore';
 import type { ExcalidrawFileFormat, ITab } from '../types';
 
+// Module-level flag — survives StrictMode double-mount unlike useRef
+let driveLoadInProgress = false;
+
 function tabToFileFormat(tab: ITab): ExcalidrawFileFormat {
   return {
     type: 'excalidraw',
@@ -102,8 +105,9 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
   // --- Load tabs from Drive on sign-in ---
 
   useEffect(() => {
-    if (!isAuthenticated || !accessToken) return;
+    if (!isAuthenticated || !accessToken || driveLoadInProgress) return;
 
+    driveLoadInProgress = true;
     isLoadingRef.current = true;
 
     (async () => {
@@ -116,19 +120,22 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
         const driveFiles = await listFiles(accessToken, resolvedFolderId);
 
         if (driveFiles.length === 0) {
-          // No Drive files yet — upload existing local tabs
-          const localTabs = useAppStore.getState().tabs;
-          await Promise.all(
-            localTabs.map(async (tab) => {
-              const fileId = await createFile(
-                accessToken,
-                resolvedFolderId,
-                `${tab.title}.excalidraw`,
-                tabToFileFormat(tab),
-              );
-              useGoogleDriveStore.getState().setDriveFileId(tab.id, fileId);
-            }),
-          );
+          // Only upload if we have no prior Drive mapping — prevents double-upload on concurrent runs
+          const existingIds = useGoogleDriveStore.getState().driveFileIds;
+          if (Object.keys(existingIds).length === 0) {
+            const localTabs = useAppStore.getState().tabs;
+            await Promise.all(
+              localTabs.map(async (tab) => {
+                const fileId = await createFile(
+                  accessToken,
+                  resolvedFolderId,
+                  `${tab.title}.excalidraw`,
+                  tabToFileFormat(tab),
+                );
+                useGoogleDriveStore.getState().setDriveFileId(tab.id, fileId);
+              }),
+            );
+          }
           setSyncStatus('idle');
           return;
         }
@@ -178,6 +185,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
         }
       } finally {
         isLoadingRef.current = false;
+        driveLoadInProgress = false;
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
