@@ -8,9 +8,9 @@ import styles from './style.module.css';
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 const GoogleSignInModal = () => {
-  const { isAuthenticated, skippedAuth, setSkippedAuth } = useGoogleDriveStore();
+  const { isAuthenticated, skippedAuth, refreshToken, setSkippedAuth } = useGoogleDriveStore();
 
-  if (!CLIENT_ID || isAuthenticated || skippedAuth) return null;
+  if (!CLIENT_ID || isAuthenticated || skippedAuth || refreshToken) return null;
 
   const handleSignIn = () => {
     redirectToGoogleSignIn(CLIENT_ID);

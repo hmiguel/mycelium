@@ -30,6 +30,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
     accessToken,
     isAuthenticated,
     folderId,
+    refreshToken,
     clearAuth,
     setSyncStatus,
     setFolderId,
@@ -49,9 +50,37 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
     axios
       .post(`${apiBase}/mycelium/auth/token`, { code, redirect_uri: window.location.origin })
       .then((res) => {
-        const { access_token, expires_in } = res.data as { access_token: string; expires_in: number };
+        const { access_token, expires_in, refresh_token } = res.data as { access_token: string; expires_in: number; refresh_token?: string };
         const expiry = Date.now() + expires_in * 1000;
 
+        return axios
+          .get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${access_token}` },
+          })
+          .then((userRes) => {
+            useGoogleDriveStore.getState().setAccessToken(access_token, expiry, userRes.data.email as string, refresh_token);
+          })
+          .catch(() => {
+            useGoogleDriveStore.getState().setAccessToken(access_token, expiry, '', refresh_token);
+          });
+      })
+      .catch((err) => {
+        const msg = axios.isAxiosError(err) ? (err.response?.data as { error?: string })?.error ?? err.message : 'Auth failed';
+        useGoogleDriveStore.getState().setSyncStatus('error', msg);
+      });
+  }, []);
+
+  // --- Auto-restore session from refresh token on load ---
+
+  useEffect(() => {
+    if (isAuthenticated || !refreshToken) return;
+
+    const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+    axios
+      .post(`${apiBase}/mycelium/auth/refresh`, { refresh_token: refreshToken })
+      .then((res) => {
+        const { access_token, expires_in } = res.data as { access_token: string; expires_in: number };
+        const expiry = Date.now() + expires_in * 1000;
         return axios
           .get('https://www.googleapis.com/oauth2/v3/userinfo', {
             headers: { Authorization: `Bearer ${access_token}` },
@@ -63,10 +92,11 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
             useGoogleDriveStore.getState().setAccessToken(access_token, expiry, '');
           });
       })
-      .catch((err) => {
-        const msg = axios.isAxiosError(err) ? (err.response?.data as { error?: string })?.error ?? err.message : 'Auth failed';
-        useGoogleDriveStore.getState().setSyncStatus('error', msg);
+      .catch(() => {
+        // Refresh token invalid/expired — clear it so the sign-in modal can appear
+        useGoogleDriveStore.getState().clearAuth();
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- Load tabs from Drive on sign-in ---

@@ -8,7 +8,8 @@ export function redirectToGoogleSignIn(clientId: string): void {
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: SCOPE,
-    access_type: 'online',
+    access_type: 'offline',
+    prompt: 'consent',
   });
   window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }

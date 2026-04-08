@@ -4,12 +4,13 @@ import { persist } from 'zustand/middleware';
 type SyncStatus = 'idle' | 'syncing' | 'error';
 
 interface GoogleDriveState {
-  // Auth (in memory only — not persisted)
+  // Auth — accessToken in memory only, refreshToken persisted
   accessToken: string | null;
   tokenExpiry: number | null;
   userEmail: string | null;
   isAuthenticated: boolean;
   skippedAuth: boolean;
+  refreshToken: string | null;
 
   // Sync status
   syncStatus: SyncStatus;
@@ -20,7 +21,7 @@ interface GoogleDriveState {
   driveFileIds: Record<number, string>; // tabId → driveFileId
 
   // Actions
-  setAccessToken: (token: string, expiry: number, email: string) => void;
+  setAccessToken: (token: string, expiry: number, email: string, refreshToken?: string | null) => void;
   clearAuth: () => void;
   setSkippedAuth: (skipped: boolean) => void;
   setSyncStatus: (status: SyncStatus, error?: string) => void;
@@ -37,20 +38,22 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
       userEmail: null,
       isAuthenticated: false,
       skippedAuth: false,
+      refreshToken: null,
       syncStatus: 'idle',
       lastSyncError: null,
       folderId: null,
       driveFileIds: {},
 
-      setAccessToken: (token, expiry, email) =>
-        set({
+      setAccessToken: (token, expiry, email, refreshToken) =>
+        set((state) => ({
           accessToken: token,
           tokenExpiry: expiry,
           userEmail: email,
           isAuthenticated: true,
           syncStatus: 'idle',
           lastSyncError: null,
-        }),
+          refreshToken: refreshToken !== undefined ? refreshToken : state.refreshToken,
+        })),
 
       clearAuth: () =>
         set({
@@ -59,6 +62,7 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
           userEmail: null,
           isAuthenticated: false,
           skippedAuth: false,
+          refreshToken: null,
           syncStatus: 'idle',
           lastSyncError: null,
         }),
@@ -87,6 +91,9 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
       partialize: (state) => ({
         folderId: state.folderId,
         driveFileIds: state.driveFileIds,
+        skippedAuth: state.skippedAuth,
+        refreshToken: state.refreshToken,
+        userEmail: state.userEmail,
       }),
     },
   ),
