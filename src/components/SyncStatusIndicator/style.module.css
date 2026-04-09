@@ -2,8 +2,17 @@
   position: relative;
   display: flex;
   align-items: center;
+  gap: 6px;
   margin-left: auto;
   margin-right: 8px;
+}
+
+.commitSha {
+  font-size: 0.65rem;
+  color: var(--text-primary-color, #1b1b1f);
+  opacity: 0.35;
+  font-family: monospace;
+  user-select: none;
 }
 
 .button {

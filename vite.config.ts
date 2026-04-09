@@ -12,5 +12,8 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
     },
+    define: {
+      __COMMIT_SHA__: JSON.stringify((env.CF_PAGES_COMMIT_SHA ?? 'dev').slice(0, 7)),
+    },
   };
 });

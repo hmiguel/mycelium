@@ -36,6 +36,7 @@ const SyncStatusIndicator = () => {
 
   return (
     <div className={styles.wrapper}>
+      <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
       <button
         ref={buttonRef}
         className={styles.button}
