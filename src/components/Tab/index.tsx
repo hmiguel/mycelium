@@ -1,11 +1,11 @@
 import { useSortable } from '@dnd-kit/react/sortable';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useAppStore } from '../../store';
 import type { ITab } from '../../types';
-import { TrashIcon } from '../icons';
+import { ChevronDownIcon } from '../icons';
 import styles from './style.module.css';
 
 interface TabProps {
@@ -20,6 +20,8 @@ interface FormData {
 const Tab = ({ tab, index }: TabProps) => {
   const { currentTabId, setCurrentTabId, updateTab, deleteTab } = useAppStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const { register, handleSubmit, reset } = useForm<FormData>({
     defaultValues: { title: tab.title },
@@ -34,30 +36,45 @@ const Tab = ({ tab, index }: TabProps) => {
 
   const isActive = currentTabId === tab.id;
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Close menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
 
+  const handleChevronClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentTabId(tab.id);
+    setMenuOpen((open) => !open);
+  };
+
+  const handleRename = () => {
+    setMenuOpen(false);
+    setIsEditing(true);
+    reset({ title: tab.title });
+  };
+
+  const handleDelete = () => {
+    setMenuOpen(false);
     if (tab.elements.length === 0) {
       deleteTab(tab.id);
       return;
     }
-
-    const isConfirmed = confirm('Are you sure you want to delete this tab?');
-    if (!isConfirmed) return;
-    deleteTab(tab.id);
-  };
-
-  const handleTitleClick = () => {
-    if (!isActive) return;
-    setIsEditing(true);
-    reset({ title: tab.title });
+    if (confirm('Are you sure you want to delete this tab?')) {
+      deleteTab(tab.id);
+    }
   };
 
   const onSubmit = (data: FormData) => {
     const trimmedTitle = data.title.trim();
     if (trimmedTitle && trimmedTitle !== tab.title) {
-      const newTab = { ...tab, title: trimmedTitle };
-      updateTab(tab.id, newTab);
+      updateTab(tab.id, { ...tab, title: trimmedTitle });
     }
     setIsEditing(false);
   };
@@ -76,16 +93,7 @@ const Tab = ({ tab, index }: TabProps) => {
       })}
       onClick={() => setCurrentTabId(tab.id)}
     >
-      {!isEditing && (
-        <span
-          className={clsx(styles.title, { [styles.active]: isActive })}
-          onClick={handleTitleClick}
-          title={tab.title}
-        >
-          {tab.title}
-        </span>
-      )}
-      {isEditing && (
+      {isEditing ? (
         <form onSubmit={handleSubmit(onSubmit)}>
           <input
             {...register('title')}
@@ -94,22 +102,32 @@ const Tab = ({ tab, index }: TabProps) => {
             autoFocus
             onBlur={handleSubmit(onSubmit)}
             onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                handleCancel();
-              }
+              if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
             }}
           />
         </form>
+      ) : (
+        <span className={styles.title} title={tab.title}>
+          {tab.title}
+        </span>
       )}
-      {isActive && (
+
+      <div className={styles.menuWrapper} ref={menuRef}>
         <button
-          className={clsx({ [styles.active]: isActive })}
-          onClick={handleDelete}
+          className={clsx(styles.chevron, { [styles.chevronVisible]: isActive || menuOpen })}
+          onClick={handleChevronClick}
+          title="Tab options"
         >
-          <TrashIcon />
+          <ChevronDownIcon />
         </button>
-      )}
+
+        {menuOpen && (
+          <div className={styles.menu}>
+            <button className={styles.menuItem} onClick={handleRename}>Rename</button>
+            <button className={clsx(styles.menuItem, styles.menuItemDanger)} onClick={handleDelete}>Delete</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

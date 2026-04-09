@@ -6,16 +6,22 @@
   max-width: 300px;
   cursor: grab;
   display: flex;
-  font-weight: 400;
-  gap: 10px;
+  justify-content: center;
+  gap: 4px;
   font-size: 0.875rem;
+  font-weight: 600;
   height: var(--lg-button-size, 2.25rem);
-  padding: 0 10px;
+  padding: 0 8px;
   user-select: none;
   color: var(--text-primary-color, #1b1b1f);
+  position: relative;
 
   &:hover {
     background-color: var(--button-hover-bg, #f1f0ff);
+  }
+
+  &:hover .chevron {
+    opacity: 1;
   }
 
   &.active {
@@ -27,31 +33,18 @@
     border-bottom-left-radius: var(--border-radius-lg, 0.5rem);
   }
 
-&.dragging {
+  &.dragging {
     opacity: 0.5;
     z-index: 1;
-  }
-
-  & button {
-    border-radius: 4px;
-    cursor: pointer;
-    padding: 4px;
-
-    &:hover {
-      background-color: rgba(0, 0, 0, 0.1);
-    }
   }
 }
 
 .title {
   flex: 1;
+  text-align: center;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-
-  &.active {
-    cursor: text;
-  }
 }
 
 .titleInput {
@@ -61,8 +54,75 @@
   width: 100%;
   outline: none;
   padding: 2px 4px;
+  font-weight: 600;
 
   &:focus {
     border-color: #6965db;
+  }
+}
+
+.menuWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.chevron {
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity 0.1s;
+  color: var(--text-primary-color, #1b1b1f);
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.chevronVisible {
+  opacity: 1;
+}
+
+.menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: var(--island-bg-color, #fff);
+  border-radius: var(--border-radius-lg, 0.5rem);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  min-width: 130px;
+  z-index: 100;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-family: Assistant, sans-serif;
+  font-weight: 400;
+  color: var(--text-primary-color, #1b1b1f);
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
+
+.menuItemDanger {
+  color: #e03131;
+
+  &:hover {
+    background-color: #fff5f5;
   }
 }
