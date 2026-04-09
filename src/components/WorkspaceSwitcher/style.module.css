@@ -8,15 +8,14 @@
 
 .pill {
   align-items: center;
-  background: var(--island-bg-color, #fff);
+  background: var(--color-surface-primary-container, #e0dfff);
   border-radius: var(--border-radius-lg, 0.5rem);
-  box-shadow: 0 0 0 1px var(--color-surface-lowest, #e0dfff);
-  color: var(--text-primary-color, #1b1b1f);
+  color: var(--color-on-primary-container, #030064);
   cursor: pointer;
   display: flex;
   font-size: 0.875rem;
   font-weight: 600;
-  gap: 4px;
+  gap: 6px;
   height: var(--lg-button-size, 2.25rem);
   padding: 0 10px;
   user-select: none;
@@ -31,20 +30,16 @@
   background-color: var(--button-hover-bg, #f1f0ff);
 }
 
+.pillIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .pillText {
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.pillChevron {
-  display: flex;
-  align-items: center;
-  transition: transform 0.15s;
-}
-
-.pillChevronOpen {
-  transform: rotate(180deg);
 }
 
 .dropdown {

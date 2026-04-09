@@ -26,6 +26,12 @@ export const ChevronDownIcon = () => (
   </svg>
 );
 
+export const WorkspaceIcon = () => (
+  <svg width={16} height={16} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 5.5C1 4.7 1.7 4 2.5 4H6l1.5 2H13.5c.8 0 1.5.7 1.5 1.5v5c0 .8-.7 1.5-1.5 1.5h-11C1.7 14 1 13.3 1 12.5v-7z" />
+  </svg>
+);
+
 export const PlusIcon = () => {
   return (
     <svg

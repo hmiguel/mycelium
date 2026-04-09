@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useAppStore } from '../../store';
-import { ChevronDownIcon } from '../icons';
+import { ChevronDownIcon, WorkspaceIcon } from '../icons';
 import styles from './style.module.css';
 
 interface FormData {
@@ -74,10 +74,8 @@ const WorkspaceSwitcher = () => {
         className={clsx(styles.pill, { [styles.pillOpen]: open })}
         onClick={() => setOpen((o) => !o)}
       >
+        <span className={styles.pillIcon}><WorkspaceIcon /></span>
         <span className={styles.pillText}>{currentWorkspace?.title ?? 'Default'}</span>
-        <span className={clsx(styles.pillChevron, { [styles.pillChevronOpen]: open })}>
-          <ChevronDownIcon />
-        </span>
       </button>
 
       {open && (
