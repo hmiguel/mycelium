@@ -5,15 +5,17 @@ import {
   createFile,
   deleteFile,
   findOrCreateFolder,
+  findOrCreateSubfolder,
   getFileContent,
   listFiles,
+  listSubfolders,
   renameFile,
   updateFile,
 } from '../services/driveApi';
 import { extractCodeFromUrl } from '../services/gisAuth';
 import { useAppStore } from '../store';
 import { useGoogleDriveStore } from '../store/googleDriveStore';
-import type { ExcalidrawFileFormat, ITab } from '../types';
+import type { ExcalidrawFileFormat, ITab, IWorkspace } from '../types';
 
 // Module-level flag — survives StrictMode double-mount unlike useRef
 let driveLoadInProgress = false;
@@ -62,6 +64,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const renameTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const wsRenameTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const isLoadingRef = useRef(false);
 
   // --- Exchange auth code for token via backend after redirect ---
@@ -132,61 +135,121 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
         const resolvedFolderId = folderId ?? (await findOrCreateFolder(accessToken));
         if (!folderId) setFolderId(resolvedFolderId);
 
-        const driveFiles = await listFiles(accessToken, resolvedFolderId);
+        const subfolders = await listSubfolders(accessToken, resolvedFolderId);
 
-        if (driveFiles.length === 0) {
-          // Only upload if we have no prior Drive mapping — prevents double-upload on concurrent runs
-          const existingIds = useGoogleDriveStore.getState().driveFileIds;
-          if (Object.keys(existingIds).length === 0) {
-            const localTabs = useAppStore.getState().tabs;
-            await Promise.all(
-              localTabs.map(async (tab) => {
-                const fileId = await createFile(
-                  accessToken,
-                  resolvedFolderId,
-                  `${tab.title}.excalidraw`,
-                  tabToFileFormat(tab),
-                );
-                useGoogleDriveStore.getState().setDriveFileId(tab.id, fileId);
-              }),
-            );
+        if (subfolders.length === 0) {
+          // No workspace subfolders yet
+          const legacyFiles = await listFiles(accessToken, resolvedFolderId);
+
+          if (legacyFiles.length === 0) {
+            // Fresh Drive: upload local tabs into workspace subfolders
+            const existingIds = useGoogleDriveStore.getState().driveFileIds;
+            if (Object.keys(existingIds).length === 0) {
+              const localTabs = useAppStore.getState().tabs;
+              const localWorkspaces = useAppStore.getState().workspaces;
+              await Promise.all(
+                localTabs.map(async (tab) => {
+                  const workspace = localWorkspaces.find((w) => w.id === tab.workspaceId) ?? localWorkspaces[0];
+                  let wsFolder = useGoogleDriveStore.getState().workspaceFolderIds[workspace.id];
+                  if (!wsFolder) {
+                    wsFolder = await findOrCreateSubfolder(accessToken, resolvedFolderId, workspace.title);
+                    useGoogleDriveStore.getState().setWorkspaceFolderId(workspace.id, wsFolder);
+                  }
+                  const fileId = await createFile(accessToken, wsFolder, `${tab.title}.excalidraw`, tabToFileFormat(tab));
+                  useGoogleDriveStore.getState().setDriveFileId(tab.id, fileId);
+                }),
+              );
+            }
+            setSyncStatus('idle');
+            return;
           }
+
+          // Legacy: .excalidraw files directly in root → treat as workspace 0
+          const currentDriveFileIds = useGoogleDriveStore.getState().driveFileIds;
+          const driveIdToTabId = Object.fromEntries(
+            Object.entries(currentDriveFileIds).map(([tabId, driveId]) => [driveId, Number(tabId)]),
+          );
+          const contents = await Promise.all(
+            legacyFiles.map((f) => getFileContent(accessToken, f.id).then((c) => ({ ...c, driveId: f.id }))),
+          );
+          let maxId = Object.keys(currentDriveFileIds).length > 0
+            ? Math.max(...Object.keys(currentDriveFileIds).map(Number))
+            : -1;
+          const reconciledTabs: ITab[] = contents.map((content) => {
+            const existingTabId = driveIdToTabId[content.driveId];
+            if (existingTabId !== undefined) {
+              return { id: existingTabId, workspaceId: 0, title: content.title, elements: content.elements, appState: content.appState };
+            }
+            maxId += 1;
+            useGoogleDriveStore.getState().setDriveFileId(maxId, content.driveId);
+            return { id: maxId, workspaceId: 0, title: content.title, elements: content.elements, appState: content.appState };
+          });
+          const defaultWorkspaces: IWorkspace[] = [{ id: 0, title: 'Default' }];
+          useAppStore.getState().setWorkspacesAndTabs(defaultWorkspaces, reconciledTabs, 0, reconciledTabs[0]?.id ?? 0);
           setSyncStatus('idle');
           return;
         }
 
-        // Fetch all Drive file contents in parallel
-        const contents = await Promise.all(
-          driveFiles.map((f) =>
-            getFileContent(accessToken, f.id).then((c) => ({ ...c, driveId: f.id })),
-          ),
-        );
-
+        // Has workspace subfolders: reconcile from Drive
         const currentDriveFileIds = useGoogleDriveStore.getState().driveFileIds;
-
-        // Build reverse map: driveFileId → tabId
         const driveIdToTabId = Object.fromEntries(
           Object.entries(currentDriveFileIds).map(([tabId, driveId]) => [driveId, Number(tabId)]),
         );
 
-        // Drive is source of truth — build tab list purely from Drive files
-        let maxId = Object.keys(currentDriveFileIds).length > 0
+        const storedWsFolderIds = useGoogleDriveStore.getState().workspaceFolderIds;
+        const folderIdToWsId = Object.fromEntries(
+          Object.entries(storedWsFolderIds).map(([wsId, fId]) => [fId, Number(wsId)]),
+        );
+
+        let maxWsId = Object.keys(storedWsFolderIds).length > 0
+          ? Math.max(...Object.keys(storedWsFolderIds).map(Number))
+          : -1;
+
+        const reconciledWorkspaces: IWorkspace[] = [];
+        const wsFolderMap: Record<number, string> = { ...storedWsFolderIds };
+
+        for (const subfolder of subfolders) {
+          let wsId = folderIdToWsId[subfolder.id];
+          if (wsId === undefined) {
+            maxWsId += 1;
+            wsId = maxWsId;
+            wsFolderMap[wsId] = subfolder.id;
+            useGoogleDriveStore.getState().setWorkspaceFolderId(wsId, subfolder.id);
+          }
+          reconciledWorkspaces.push({ id: wsId, title: subfolder.name });
+        }
+
+        let maxTabId = Object.keys(currentDriveFileIds).length > 0
           ? Math.max(...Object.keys(currentDriveFileIds).map(Number))
           : -1;
 
-        const reconciledTabs: ITab[] = contents.map((content) => {
-          const existingTabId = driveIdToTabId[content.driveId];
+        const allReconciledTabs: ITab[] = [];
 
-          if (existingTabId !== undefined) {
-            return { id: existingTabId, title: content.title, elements: content.elements, appState: content.appState };
+        for (const workspace of reconciledWorkspaces) {
+          const wsFolder = wsFolderMap[workspace.id];
+          const driveFiles = await listFiles(accessToken, wsFolder);
+          const contents = await Promise.all(
+            driveFiles.map((f) => getFileContent(accessToken, f.id).then((c) => ({ ...c, driveId: f.id }))),
+          );
+          for (const content of contents) {
+            const existingTabId = driveIdToTabId[content.driveId];
+            if (existingTabId !== undefined) {
+              allReconciledTabs.push({ id: existingTabId, workspaceId: workspace.id, title: content.title, elements: content.elements, appState: content.appState });
+            } else {
+              maxTabId += 1;
+              useGoogleDriveStore.getState().setDriveFileId(maxTabId, content.driveId);
+              allReconciledTabs.push({ id: maxTabId, workspaceId: workspace.id, title: content.title, elements: content.elements, appState: content.appState });
+            }
           }
+        }
 
-          maxId += 1;
-          useGoogleDriveStore.getState().setDriveFileId(maxId, content.driveId);
-          return { id: maxId, title: content.title, elements: content.elements, appState: content.appState };
-        });
+        const storedCurrentWsId = useAppStore.getState().currentWorkspaceId;
+        const validWs = reconciledWorkspaces.find((w) => w.id === storedCurrentWsId);
+        const currentWorkspaceId = validWs ? storedCurrentWsId : reconciledWorkspaces[0]?.id ?? 0;
+        const wsTabs = allReconciledTabs.filter((t) => t.workspaceId === currentWorkspaceId);
+        const currentTabId = wsTabs[0]?.id ?? allReconciledTabs[0]?.id ?? 0;
 
-        useAppStore.getState().setTabs(reconciledTabs);
+        useAppStore.getState().setWorkspacesAndTabs(reconciledWorkspaces, allReconciledTabs, currentWorkspaceId, currentTabId);
         setSyncStatus('idle');
       } catch (err) {
         if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
@@ -203,7 +266,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  // --- Subscribe to tab lifecycle (delete + rename) ---
+  // --- Subscribe to tab + workspace lifecycle ---
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -215,9 +278,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
       const currentDriveFileIds = useGoogleDriveStore.getState().driveFileIds;
 
       // Detect deleted tabs
-      const deletedTabs = prevState.tabs.filter(
-        (pt) => !newState.tabs.find((nt) => nt.id === pt.id),
-      );
+      const deletedTabs = prevState.tabs.filter((pt) => !newState.tabs.find((nt) => nt.id === pt.id));
       for (const tab of deletedTabs) {
         const driveFileId = currentDriveFileIds[tab.id];
         if (driveFileId) {
@@ -230,16 +291,35 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
       for (const nt of newState.tabs) {
         const pt = prevState.tabs.find((t) => t.id === nt.id);
         if (!pt || pt.title === nt.title) continue;
-
         const driveFileId = currentDriveFileIds[nt.id];
         if (!driveFileId) continue;
-
         clearTimeout(renameTimeoutsRef.current[nt.id]);
         renameTimeoutsRef.current[nt.id] = setTimeout(() => {
           const latestToken = useGoogleDriveStore.getState().accessToken;
-          if (latestToken) {
-            renameFile(latestToken, driveFileId, `${nt.title}.excalidraw`).catch(() => {});
-          }
+          if (latestToken) renameFile(latestToken, driveFileId, `${nt.title}.excalidraw`).catch(() => {});
+        }, 500);
+      }
+
+      // Detect deleted workspaces
+      const deletedWorkspaces = prevState.workspaces.filter((pw) => !newState.workspaces.find((nw) => nw.id === pw.id));
+      for (const ws of deletedWorkspaces) {
+        const wsFolderId = useGoogleDriveStore.getState().workspaceFolderIds[ws.id];
+        if (wsFolderId) {
+          deleteFile(token, wsFolderId).catch(() => {});
+          useGoogleDriveStore.getState().removeWorkspaceFolderId(ws.id);
+        }
+      }
+
+      // Detect renamed workspaces
+      for (const nw of newState.workspaces) {
+        const pw = prevState.workspaces.find((w) => w.id === nw.id);
+        if (!pw || pw.title === nw.title) continue;
+        const wsFolderId = useGoogleDriveStore.getState().workspaceFolderIds[nw.id];
+        if (!wsFolderId) continue;
+        clearTimeout(wsRenameTimeoutsRef.current[nw.id]);
+        wsRenameTimeoutsRef.current[nw.id] = setTimeout(() => {
+          const latestToken = useGoogleDriveStore.getState().accessToken;
+          if (latestToken) renameFile(latestToken, wsFolderId, nw.title).catch(() => {});
         }, 500);
       }
     });
@@ -270,8 +350,22 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
       const tab = useAppStore.getState().tabs.find((t) => t.id === tabId);
       if (!tab) return;
 
-      const { driveFileIds: ids, folderId: folder } = useGoogleDriveStore.getState();
-      if (!folder) return;
+      const { driveFileIds: ids, folderId: rootFolder } = useGoogleDriveStore.getState();
+      if (!rootFolder) return;
+
+      // Get or create workspace subfolder
+      const workspace = useAppStore.getState().workspaces.find((w) => w.id === tab.workspaceId);
+      if (!workspace) return;
+
+      let workspaceFolderId = useGoogleDriveStore.getState().workspaceFolderIds[tab.workspaceId];
+      if (!workspaceFolderId) {
+        try {
+          workspaceFolderId = await findOrCreateSubfolder(token, rootFolder, workspace.title);
+          useGoogleDriveStore.getState().setWorkspaceFolderId(tab.workspaceId, workspaceFolderId);
+        } catch {
+          return;
+        }
+      }
 
       setSyncStatus('syncing');
 
@@ -284,17 +378,17 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
             await updateFile(token, existingId, content);
           } catch (err) {
             if (axios.isAxiosError(err) && err.response?.status === 404) {
-              const newId = await createFile(token, folder, `${tab.title}.excalidraw`, content);
+              const newId = await createFile(token, workspaceFolderId, `${tab.title}.excalidraw`, content);
               useGoogleDriveStore.getState().setDriveFileId(tabId, newId);
             } else if (axios.isAxiosError(err) && err.response?.status === 401) {
-              token = await performTokenRefresh() ?? token;
+              token = (await performTokenRefresh()) ?? token;
               await updateFile(token, existingId, content);
             } else {
               throw err;
             }
           }
         } else {
-          const newId = await createFile(token, folder, `${tab.title}.excalidraw`, content);
+          const newId = await createFile(token, workspaceFolderId, `${tab.title}.excalidraw`, content);
           useGoogleDriveStore.getState().setDriveFileId(tabId, newId);
         }
 
@@ -310,7 +404,6 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
   const onTabChange = useCallback(
     (tabId: number) => {
       if (!isAuthenticated || isLoadingRef.current) return;
-
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = setTimeout(() => {
         saveTabToDrive(tabId);

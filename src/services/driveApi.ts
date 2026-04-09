@@ -32,6 +32,46 @@ export async function findOrCreateFolder(accessToken: string): Promise<string> {
   return createRes.data.id as string;
 }
 
+export async function listSubfolders(
+  accessToken: string,
+  parentFolderId: string,
+): Promise<{ id: string; name: string }[]> {
+  const res = await axios.get(DRIVE_FILES_URL, {
+    headers: authHeader(accessToken),
+    params: {
+      q: `mimeType='application/vnd.google-apps.folder' and '${parentFolderId}' in parents and trashed=false`,
+      fields: 'files(id,name)',
+    },
+  });
+  return res.data.files as { id: string; name: string }[];
+}
+
+export async function findOrCreateSubfolder(
+  accessToken: string,
+  parentFolderId: string,
+  name: string,
+): Promise<string> {
+  const headers = authHeader(accessToken);
+
+  const searchRes = await axios.get(DRIVE_FILES_URL, {
+    headers,
+    params: {
+      q: `mimeType='application/vnd.google-apps.folder' and name='${name}' and '${parentFolderId}' in parents and trashed=false`,
+      fields: 'files(id)',
+    },
+  });
+
+  const files: { id: string }[] = searchRes.data.files;
+  if (files.length > 0) return files[0].id;
+
+  const createRes = await axios.post(
+    DRIVE_FILES_URL,
+    { name, parents: [parentFolderId], mimeType: 'application/vnd.google-apps.folder' },
+    { headers },
+  );
+  return createRes.data.id as string;
+}
+
 export async function listFiles(
   accessToken: string,
   folderId: string,

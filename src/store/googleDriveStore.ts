@@ -19,6 +19,7 @@ interface GoogleDriveState {
   // Persisted
   folderId: string | null;
   driveFileIds: Record<number, string>; // tabId → driveFileId
+  workspaceFolderIds: Record<number, string>; // workspaceId → Drive subfolder ID
 
   // Actions
   setAccessToken: (token: string, expiry: number, email: string, refreshToken?: string | null) => void;
@@ -28,6 +29,8 @@ interface GoogleDriveState {
   setFolderId: (id: string) => void;
   setDriveFileId: (tabId: number, fileId: string) => void;
   removeDriveFileId: (tabId: number) => void;
+  setWorkspaceFolderId: (workspaceId: number, folderId: string) => void;
+  removeWorkspaceFolderId: (workspaceId: number) => void;
 }
 
 export const useGoogleDriveStore = create<GoogleDriveState>()(
@@ -43,6 +46,7 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
       lastSyncError: null,
       folderId: null,
       driveFileIds: {},
+      workspaceFolderIds: {},
 
       setAccessToken: (token, expiry, email, refreshToken) =>
         set((state) => ({
@@ -85,12 +89,25 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
           delete next[tabId];
           return { driveFileIds: next };
         }),
+
+      setWorkspaceFolderId: (workspaceId, folderId) =>
+        set((state) => ({
+          workspaceFolderIds: { ...state.workspaceFolderIds, [workspaceId]: folderId },
+        })),
+
+      removeWorkspaceFolderId: (workspaceId) =>
+        set((state) => {
+          const next = { ...state.workspaceFolderIds };
+          delete next[workspaceId];
+          return { workspaceFolderIds: next };
+        }),
     }),
     {
       name: 'mycelium-drive-meta',
       partialize: (state) => ({
         folderId: state.folderId,
         driveFileIds: state.driveFileIds,
+        workspaceFolderIds: state.workspaceFolderIds,
         refreshToken: state.refreshToken,
         userEmail: state.userEmail,
       }),

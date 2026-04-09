@@ -10,21 +10,21 @@ import Tab from '../Tab';
 import style from './style.module.css';
 
 const TabBar = () => {
-  const { tabs, setCurrentTabId, createTab, setTabs } = useAppStore();
+  const { tabs, currentWorkspaceId, setCurrentTabId, createTab, setTabs } = useAppStore();
   const tabBarRef = useRef<HTMLDivElement>(null);
+
+  const workspaceTabs = tabs.filter((t) => t.workspaceId === currentWorkspaceId);
 
   const handleCreateTabBtnClick = () => {
     const newTabId = createTab();
     setCurrentTabId(newTabId);
   };
 
-  const handleDragEnd: NonNullable<DragDropEventHandlers['onDragEnd']> = (
-    event,
-  ) => {
+  const handleDragEnd: NonNullable<DragDropEventHandlers['onDragEnd']> = (event) => {
     if (event.canceled) return;
-    const movedTabs = move(tabs, event);
-    if (movedTabs === tabs) return;
-    setTabs(movedTabs);
+    const reordered = move(workspaceTabs, event);
+    if (reordered === workspaceTabs) return;
+    setTabs([...tabs.filter((t) => t.workspaceId !== currentWorkspaceId), ...reordered]);
   };
 
   return (
@@ -38,13 +38,10 @@ const TabBar = () => {
           ]}
         >
           <div className={style.tabBar} ref={tabBarRef}>
-            {tabs.map((tab, index) => (
+            {workspaceTabs.map((tab, index) => (
               <Tab key={tab.id} tab={tab} index={index} />
             ))}
-            <button
-              className={style.createTabButton}
-              onClick={handleCreateTabBtnClick}
-            >
+            <button className={style.createTabButton} onClick={handleCreateTabBtnClick}>
               <PlusIcon />
             </button>
           </div>

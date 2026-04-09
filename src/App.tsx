@@ -7,6 +7,7 @@ import GoogleSignInModal from './components/GoogleSignInModal';
 import ImportModal from './components/ImportButton';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import TabBar from './components/TabBar';
+import WorkspaceSwitcher from './components/WorkspaceSwitcher';
 import { useDriveSync } from './hooks/useDriveSync';
 import { useAppStore } from './store';
 import { useExcalidrawFilesStore } from './store/excalidrawFiles';
@@ -59,7 +60,8 @@ function App() {
   return (
     <>
       <GoogleSignInModal />
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <WorkspaceSwitcher />
         <Excalidraw
           key={currentTabId}
           onChange={handleOnChange}

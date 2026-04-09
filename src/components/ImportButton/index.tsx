@@ -49,8 +49,7 @@ const ImportModal = () => {
 
       const newTabId = createTab();
 
-      const newTabData: ITab = {
-        id: newTabId,
+      const newTabData: Partial<ITab> = {
         title: 'Imported board',
         elements: excalidrawBoard.elements,
         appState: {

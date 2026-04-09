@@ -1,0 +1,218 @@
+.wrapper {
+  position: absolute;
+  top: 8px;
+  left: 46px;
+  z-index: 10;
+  font-family: Assistant, sans-serif;
+}
+
+.pill {
+  align-items: center;
+  background: var(--island-bg-color, #fff);
+  border-radius: var(--border-radius-lg, 0.5rem);
+  box-shadow: 0 0 0 1px var(--color-surface-lowest, #e0dfff);
+  color: var(--text-primary-color, #1b1b1f);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 4px;
+  height: var(--lg-button-size, 2.25rem);
+  padding: 0 10px;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
+
+.pillOpen {
+  background-color: var(--button-hover-bg, #f1f0ff);
+}
+
+.pillText {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pillChevron {
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s;
+}
+
+.pillChevronOpen {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--island-bg-color, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--border-radius-lg, 0.5rem);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 1000;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  position: relative;
+
+  &:hover .rowChevron {
+    opacity: 1;
+  }
+}
+
+.rowLabel {
+  align-items: center;
+  border-radius: 4px;
+  color: var(--text-primary-color, #1b1b1f);
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  font-size: 0.8rem;
+  font-family: Assistant, sans-serif;
+  font-weight: 400;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
+
+.rowLabelActive {
+  font-weight: 600;
+}
+
+.checkmark {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0;
+  width: 12px;
+}
+
+.checkmarkVisible {
+  opacity: 1;
+}
+
+.rowMenuWrapper {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rowChevron {
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary-color, #1b1b1f);
+  opacity: 0;
+  padding: 4px;
+  transition: opacity 0.1s;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.rowChevronVisible {
+  opacity: 1;
+}
+
+.submenu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 4px);
+  background: var(--island-bg-color, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--border-radius-lg, 0.5rem);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  min-width: 120px;
+  padding: 4px;
+  z-index: 1001;
+}
+
+.submenuItem {
+  border-radius: 4px;
+  color: var(--text-primary-color, #1b1b1f);
+  cursor: pointer;
+  display: block;
+  font-family: Assistant, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 6px 10px;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
+
+.submenuItemDanger {
+  color: #e03131;
+
+  &:hover {
+    background-color: #fff5f5;
+  }
+}
+
+.renameForm {
+  flex: 1;
+  padding: 2px 4px;
+}
+
+.renameInput {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  font-family: Assistant, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  outline: none;
+  padding: 4px 6px;
+  width: 100%;
+
+  &:focus {
+    border-color: #6965db;
+  }
+}
+
+.divider {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  margin: 4px 0;
+}
+
+.addButton {
+  border-radius: 4px;
+  color: var(--text-primary-color, #1b1b1f);
+  cursor: pointer;
+  display: block;
+  font-family: Assistant, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 6px 10px;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
