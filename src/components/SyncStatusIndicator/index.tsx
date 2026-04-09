@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
 import { MdCloudDone, MdCloudOff, MdSync } from 'react-icons/md';
 
-import { revokeToken } from '../../services/gisAuth';
+import { redirectToGoogleSignIn, revokeToken } from '../../services/gisAuth';
 import { useGoogleDriveStore } from '../../store/googleDriveStore';
 import styles from './style.module.css';
+
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
 const SyncStatusIndicator = () => {
   const { isAuthenticated, syncStatus, lastSyncError, accessToken, userEmail, clearAuth } =
@@ -11,7 +13,22 @@ const SyncStatusIndicator = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  if (!isAuthenticated) return null;
+  if (!CLIENT_ID) return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.wrapper}>
+        <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
+        <button
+          className={styles.signInButton}
+          onClick={() => redirectToGoogleSignIn(CLIENT_ID)}
+          title="Sign in to sync with Google Drive"
+        >
+          Sign in
+        </button>
+      </div>
+    );
+  }
 
   const handleSignOut = () => {
     if (accessToken) revokeToken(accessToken);

@@ -91,7 +91,6 @@ export const useGoogleDriveStore = create<GoogleDriveState>()(
       partialize: (state) => ({
         folderId: state.folderId,
         driveFileIds: state.driveFileIds,
-        skippedAuth: state.skippedAuth,
         refreshToken: state.refreshToken,
         userEmail: state.userEmail,
       }),

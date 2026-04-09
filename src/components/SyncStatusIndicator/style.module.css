@@ -85,6 +85,21 @@
   white-space: nowrap;
 }
 
+.signInButton {
+  background-color: transparent;
+  border-radius: var(--border-radius-lg, 6px);
+  color: var(--text-primary-color, #1b1b1f);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: Assistant, sans-serif;
+  height: var(--lg-button-size, 2.25rem);
+  padding: 0 10px;
+
+  &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
+  }
+}
+
 .signOutButton {
   background: none;
   border: 1px solid #c5c5d0;
