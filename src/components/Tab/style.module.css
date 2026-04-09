@@ -2,7 +2,7 @@
   align-items: center;
   background-color: var(--color-surface-low, #ececf4);
   border-radius: 0;
-  min-width: 80px;
+  min-width: 100px;
   max-width: 300px;
   cursor: grab;
   display: flex;
@@ -97,7 +97,7 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(0, 0, 0, 0.08);
   min-width: 130px;
-  z-index: 100;
+  z-index: 1000;
   overflow: hidden;
   padding: 4px;
 }
