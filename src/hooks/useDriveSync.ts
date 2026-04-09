@@ -28,12 +28,34 @@ function tabToFileFormat(tab: ITab): ExcalidrawFileFormat {
   };
 }
 
+// Silently refresh the access token. Returns the new token or null if failed.
+async function performTokenRefresh(): Promise<string | null> {
+  const { refreshToken, userEmail } = useGoogleDriveStore.getState();
+  if (!refreshToken) return null;
+
+  const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
+  try {
+    const res = await axios.post<{ access_token: string; expires_in: number }>(
+      `${apiBase}/mycelium/auth/refresh`,
+      { refresh_token: refreshToken },
+    );
+    const { access_token, expires_in } = res.data;
+    const expiry = Date.now() + expires_in * 1000;
+    useGoogleDriveStore.getState().setAccessToken(access_token, expiry, userEmail ?? '');
+    return access_token;
+  } catch {
+    useGoogleDriveStore.getState().clearAuth();
+    return null;
+  }
+}
+
 export function useDriveSync(): { onTabChange: (tabId: number) => void } {
   const {
     accessToken,
     isAuthenticated,
     folderId,
     refreshToken,
+    tokenExpiry,
     clearAuth,
     setSyncStatus,
     setFolderId,
@@ -77,30 +99,24 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
 
   useEffect(() => {
     if (isAuthenticated || !refreshToken) return;
-
-    const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
-    axios
-      .post(`${apiBase}/mycelium/auth/refresh`, { refresh_token: refreshToken })
-      .then((res) => {
-        const { access_token, expires_in } = res.data as { access_token: string; expires_in: number };
-        const expiry = Date.now() + expires_in * 1000;
-        return axios
-          .get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${access_token}` },
-          })
-          .then((userRes) => {
-            useGoogleDriveStore.getState().setAccessToken(access_token, expiry, userRes.data.email as string);
-          })
-          .catch(() => {
-            useGoogleDriveStore.getState().setAccessToken(access_token, expiry, '');
-          });
-      })
-      .catch(() => {
-        // Refresh token invalid/expired — clear it so the sign-in modal can appear
-        useGoogleDriveStore.getState().clearAuth();
-      });
+    performTokenRefresh();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // --- Proactive token refresh (5 min before expiry) ---
+
+  useEffect(() => {
+    if (!tokenExpiry || !refreshToken) return;
+
+    const delay = tokenExpiry - Date.now() - 5 * 60 * 1000;
+    if (delay <= 0) {
+      performTokenRefresh();
+      return;
+    }
+
+    const timer = setTimeout(performTokenRefresh, delay);
+    return () => clearTimeout(timer);
+  }, [tokenExpiry, refreshToken]);
 
   // --- Load tabs from Drive on sign-in ---
 
@@ -174,11 +190,8 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
         useAppStore.getState().setTabs(reconciledTabs);
         setSyncStatus('idle');
       } catch (err) {
-        if (
-          axios.isAxiosError(err) &&
-          (err.response?.status === 401 || err.response?.status === 403)
-        ) {
-          useGoogleDriveStore.getState().clearAuth();
+        if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+          await performTokenRefresh();
         } else {
           const msg = err instanceof Error ? err.message : 'Unknown error';
           setSyncStatus('error', `Failed to load from Drive: ${msg}`);
@@ -252,7 +265,7 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
 
   const saveTabToDrive = useCallback(
     async (tabId: number) => {
-      const token = useGoogleDriveStore.getState().accessToken;
+      let token = useGoogleDriveStore.getState().accessToken;
       if (!token) return;
 
       const tab = useAppStore.getState().tabs.find((t) => t.id === tabId);
@@ -274,6 +287,9 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
             if (axios.isAxiosError(err) && err.response?.status === 404) {
               const newId = await createFile(token, folder, `${tab.title}.excalidraw`, content);
               useGoogleDriveStore.getState().setDriveFileId(tabId, newId);
+            } else if (axios.isAxiosError(err) && err.response?.status === 401) {
+              token = await performTokenRefresh() ?? token;
+              await updateFile(token, existingId, content);
             } else {
               throw err;
             }
@@ -287,12 +303,9 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
         setSyncStatus('error', `Failed to save: ${msg}`);
-        if (axios.isAxiosError(err) && err.response?.status === 401) {
-          clearAuth();
-        }
       }
     },
-    [setSyncStatus, clearAuth],
+    [setSyncStatus],
   );
 
   const onTabChange = useCallback(
