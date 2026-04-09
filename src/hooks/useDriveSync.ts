@@ -56,7 +56,6 @@ export function useDriveSync(): { onTabChange: (tabId: number) => void } {
     folderId,
     refreshToken,
     tokenExpiry,
-    clearAuth,
     setSyncStatus,
     setFolderId,
   } = useGoogleDriveStore();
