@@ -1,15 +1,21 @@
 .loadButton {
-  background-color: transparent;
-  border-radius: 6px;
-  color: #1b1b1f;
+  align-items: center;
+  background-color: var(--color-surface-low);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 0 0 1px var(--color-surface-lowest);
+  color: var(--color-on-surface);
   cursor: pointer;
-  font-size: 12px;
-  font-family: Assistant, sans-serif;
-  height: 36px;
-  padding: 0 10px;
+  display: flex;
+  font-family: var(--ui-font);
+  font-size: 0.75rem;
+  letter-spacing: 0.4px;
+  gap: 0.5rem;
+  height: var(--lg-button-size);
+  padding: 0 0.625rem;
 
   &:hover {
-    background-color: #f1f0ff;
+    background-color: var(--color-surface-high);
   }
 }
 

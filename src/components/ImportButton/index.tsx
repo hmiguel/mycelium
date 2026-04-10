@@ -80,6 +80,10 @@ const ImportModal = () => {
         className={styles.loadButton}
         onClick={() => setIsModalOpen(true)}
       >
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 13V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V13" />
+          <path d="M12 3L12 15M12 15L8.5 11.5M12 15L15.5 11.5" />
+        </svg>
         Import from Excalidraw
       </button>
       <Modal isOpen={isModalOpen} onClose={handleModalClose}>
