@@ -1,33 +1,37 @@
 .wrapper {
   position: absolute;
-  top: 8px;
-  left: 46px;
+  top: 0;
+  left: calc(var(--lg-button-size) + 10px);
   z-index: 10;
-  font-family: Assistant, sans-serif;
 }
 
 .pill {
   align-items: center;
-  background: var(--color-surface-primary-container, #e0dfff);
-  border-radius: var(--border-radius-lg, 0.5rem);
-  color: var(--color-on-primary-container, #030064);
+  background-color: var(--color-surface-low);
+  border: none;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 0 0 1px var(--color-surface-lowest);
+  color: var(--color-on-surface);
   cursor: pointer;
   display: flex;
-  font-size: 0.875rem;
-  font-weight: 600;
-  gap: 6px;
-  height: var(--lg-button-size, 2.25rem);
-  padding: 0 10px;
+  font-family: var(--ui-font);
+  font-size: 0.75rem;
+  letter-spacing: 0.4px;
+  line-height: 0;
+  gap: 0.5rem;
+  height: var(--lg-button-size);
+  padding: 0 0.625rem;
   user-select: none;
   white-space: nowrap;
 
   &:hover {
-    background-color: var(--button-hover-bg, #f1f0ff);
+    background-color: var(--color-surface-high);
   }
 }
 
 .pillOpen {
-  background-color: var(--button-hover-bg, #f1f0ff);
+  background-color: var(--color-surface-primary-container);
+  color: var(--color-on-primary-container);
 }
 
 .pillIcon {
@@ -37,6 +41,7 @@
 }
 
 .pillText {
+  line-height: normal;
   max-width: 160px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -74,7 +79,7 @@
   display: flex;
   flex: 1;
   font-size: 0.8rem;
-  font-family: Assistant, sans-serif;
+  font-family: var(--ui-font, Assistant, sans-serif);
   font-weight: 400;
   gap: 6px;
   min-width: 0;
@@ -149,7 +154,7 @@
   color: var(--text-primary-color, #1b1b1f);
   cursor: pointer;
   display: block;
-  font-family: Assistant, sans-serif;
+  font-family: var(--ui-font, Assistant, sans-serif);
   font-size: 0.8rem;
   font-weight: 400;
   padding: 6px 10px;
@@ -178,7 +183,7 @@
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid #d0d0d0;
   border-radius: 4px;
-  font-family: Assistant, sans-serif;
+  font-family: var(--ui-font, Assistant, sans-serif);
   font-size: 0.8rem;
   font-weight: 600;
   outline: none;
@@ -200,7 +205,7 @@
   color: var(--text-primary-color, #1b1b1f);
   cursor: pointer;
   display: block;
-  font-family: Assistant, sans-serif;
+  font-family: var(--ui-font, Assistant, sans-serif);
   font-size: 0.8rem;
   font-weight: 400;
   padding: 6px 10px;

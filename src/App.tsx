@@ -16,7 +16,12 @@ function App() {
   const { tabs, currentTabId, updateTab } = useAppStore();
   const { setFiles, getFiles } = useExcalidrawFilesStore();
   const { onTabChange } = useDriveSync();
-  const renderTopRightUI = useCallback(() => <ImportModal />, []);
+  const renderTopRightUI = useCallback(() => (
+    <>
+      <WorkspaceSwitcher />
+      <ImportModal />
+    </>
+  ), []);
   const footerContent = useMemo(() => (
     <Footer>
       <TabBar />
@@ -61,7 +66,6 @@ function App() {
     <>
       <GoogleSignInModal />
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
-        <WorkspaceSwitcher />
         <Excalidraw
           key={currentTabId}
           onChange={handleOnChange}
