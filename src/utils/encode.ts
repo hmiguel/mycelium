@@ -1,5 +1,6 @@
-import { inflate } from 'pako';
+import { deflate, inflate } from 'pako';
 
+import { encryptData, IV_LENGTH_BYTES } from './encryption';
 import { decryptData } from './encryption';
 
 export interface FileEncodingInfo {
@@ -7,6 +8,52 @@ export interface FileEncodingInfo {
   compression: 'pako@1';
   encryption: 'AES-GCM';
 }
+
+export const concatBuffers = (version: number, ...chunks: Uint8Array[]): Uint8Array => {
+  const VERSION_BYTES = 4;
+  const CHUNK_SIZE_BYTES = 4;
+  const totalSize =
+    VERSION_BYTES +
+    chunks.reduce((acc, chunk) => acc + CHUNK_SIZE_BYTES + chunk.byteLength, 0);
+
+  const result = new Uint8Array(totalSize);
+  const view = new DataView(result.buffer);
+  view.setUint32(0, version);
+  let cursor = VERSION_BYTES;
+
+  for (const chunk of chunks) {
+    view.setUint32(cursor, chunk.byteLength);
+    cursor += CHUNK_SIZE_BYTES;
+    result.set(chunk, cursor);
+    cursor += chunk.byteLength;
+  }
+
+  return result;
+};
+
+export const compressData = async (
+  data: Uint8Array,
+  options: { encryptionKey: string },
+): Promise<Uint8Array> => {
+  const encodingMetadata: FileEncodingInfo = {
+    version: 2,
+    compression: 'pako@1',
+    encryption: 'AES-GCM',
+  };
+
+  const compressed = deflate(data);
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH_BYTES));
+  const encrypted = new Uint8Array(
+    await encryptData(iv, compressed, options.encryptionKey),
+  );
+
+  return concatBuffers(
+    2,
+    new TextEncoder().encode(JSON.stringify(encodingMetadata)),
+    iv,
+    encrypted,
+  );
+};
 
 export const splitBuffers = (concatenatedBuffer: Uint8Array): Uint8Array[] => {
   const buffers: Uint8Array[] = [];
