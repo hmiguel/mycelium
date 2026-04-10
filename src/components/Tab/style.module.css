@@ -4,7 +4,7 @@
   border-radius: 0;
   min-width: 100px;
   max-width: 300px;
-  cursor: grab;
+  cursor: default;
   display: flex;
   justify-content: center;
   gap: 4px;
@@ -34,6 +34,7 @@
   }
 
   &.dragging {
+    cursor: grabbing;
     opacity: 0.5;
     z-index: 1;
   }
