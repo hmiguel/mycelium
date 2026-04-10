@@ -40,10 +40,14 @@ Google requires a backend to securely exchange the OAuth auth code for an access
 ```
 POST /mycelium/auth/token
 Body: { "code": "...", "redirect_uri": "..." }
+Returns: { "access_token": "...", "expires_in": 3600, "refresh_token": "..." }
+
+POST /mycelium/auth/refresh
+Body: { "refresh_token": "..." }
 Returns: { "access_token": "...", "expires_in": 3600 }
 ```
 
-It should exchange the code with Google using your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+It should exchange the code with Google using your `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. A reference implementation using Cloudflare Workers is available in the `worker/` directory.
 
 ### 3. Frontend build variables
 
