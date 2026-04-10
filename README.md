@@ -4,17 +4,18 @@
 A self-hostable version of Excalidraw with multi-tab support and Google Drive sync, inspired by the original work of [MontejoJorge](https://github.com/MontejoJorge/excalidraw-multi-tabs).
 
 
-![Excalidraw Multi-Tabs Screenshot](https://i.ibb.co/TDcPRRzF/screely-1759180368656.png)
+![Mycelium Screenshot](docs/screenshot.png)
 
 ## 🎨 Features
 
 ✨ **Multi-Tab Support** - Work with multiple drawings simultaneously  
+🗂️ **Workspaces** - Organize tabs into workspaces, each backed by its own Google Drive folder  
 🎨 **Full Excalidraw Experience** - All the power of Excalidraw in a tabbed interface  
 📥 **Import from Excalidraw** - Seamlessly import existing Excalidraw drawings  
 💾 **Local Storage** - Your work is automatically saved locally  
 ☁️ **Google Drive Sync** - Auto-save and restore your tabs from Google Drive  
 🚀 **Self-Hostable** - Host it yourself for complete control  
-🖼️ **Image suport** - Add images to your draw
+🖼️ **Image Support** - Add images to your drawings
 
 ## ☁️ Google Drive Sync Setup
 
