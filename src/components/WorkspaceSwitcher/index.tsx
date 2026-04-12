@@ -46,7 +46,7 @@ const WorkspaceSwitcher = () => {
   const handleCreateWorkspace = () => {
     const newId = createWorkspace();
     setRenamingId(newId);
-    reset({ title: 'New Workspace' });
+    reset({ title: '' });
   };
 
   const onRenameSubmit = (data: FormData) => {
@@ -87,6 +87,7 @@ const WorkspaceSwitcher = () => {
                   <input
                     {...register('title')}
                     className={styles.renameInput}
+                    placeholder="New Workspace"
                     autoFocus
                     onBlur={handleSubmit(onRenameSubmit)}
                     onKeyDown={(e) => {
