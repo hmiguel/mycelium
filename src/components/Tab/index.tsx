@@ -107,7 +107,7 @@ const Tab = ({ tab, index }: TabProps) => {
           />
         </form>
       ) : (
-        <span className={styles.title} title={tab.title}>
+        <span className={styles.title} title={tab.title} onDoubleClick={handleRename}>
           {tab.title}
         </span>
       )}
