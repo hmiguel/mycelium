@@ -1,14 +1,9 @@
 import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
 
 import { useAppStore } from '../../store';
 import { ChevronDownIcon, WorkspaceIcon } from '../icons';
 import styles from './style.module.css';
-
-interface FormData {
-  title: string;
-}
 
 const WorkspaceSwitcher = () => {
   const {
@@ -22,42 +17,66 @@ const WorkspaceSwitcher = () => {
 
   const [open, setOpen] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const [openSubmenuId, setOpenSubmenuId] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  const { register, handleSubmit, reset } = useForm<FormData>();
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const currentWorkspace = workspaces.find((w) => w.id === currentWorkspaceId);
+
+  // Focus input whenever rename mode opens
+  useEffect(() => {
+    if (renamingId !== null) {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    }
+  }, [renamingId]);
 
   // Close dropdown on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        commitRename();
         setOpen(false);
-        setRenamingId(null);
         setOpenSubmenuId(null);
       }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
+  }, [open, renamingId, renameValue]);
 
-  const handleCreateWorkspace = () => {
-    const newId = createWorkspace();
-    setRenamingId(newId);
-    reset({ title: '' });
+  const openRename = (id: number, currentTitle: string) => {
+    setRenamingId(id);
+    setRenameValue(currentTitle);
+    setOpenSubmenuId(null);
   };
 
-  const onRenameSubmit = (data: FormData) => {
+  const commitRename = () => {
     if (renamingId !== null) {
-      const trimmed = data.title.trim();
+      const trimmed = renameValue.trim();
       if (trimmed) renameWorkspace(renamingId, trimmed);
       setRenamingId(null);
     }
   };
 
-  const handleRenameCancel = () => setRenamingId(null);
+  const cancelRename = () => setRenamingId(null);
+
+  const handleCreateWorkspace = () => {
+    const newId = createWorkspace();
+    setRenamingId(newId);
+    setRenameValue('');
+  };
+
+  const handlePillClick = (e: React.MouseEvent) => {
+    if (e.detail === 2) {
+      // Double-click: open dropdown and rename current workspace
+      setOpen(true);
+      openRename(currentWorkspaceId, currentWorkspace?.title ?? '');
+    } else {
+      setOpen((o) => !o);
+    }
+  };
 
   const handleDelete = (id: number) => {
     setOpenSubmenuId(null);
@@ -72,7 +91,7 @@ const WorkspaceSwitcher = () => {
     <div className={styles.wrapper} ref={wrapperRef}>
       <button
         className={clsx(styles.pill, { [styles.pillOpen]: open })}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handlePillClick}
       >
         <span className={styles.pillIcon}><WorkspaceIcon /></span>
         <span className={styles.pillText}>{currentWorkspace?.title ?? 'Default'}</span>
@@ -83,15 +102,19 @@ const WorkspaceSwitcher = () => {
           {workspaces.map((ws) => (
             <div key={ws.id} className={styles.row}>
               {renamingId === ws.id ? (
-                <form className={styles.renameForm} onSubmit={handleSubmit(onRenameSubmit)}>
+                <form
+                  className={styles.renameForm}
+                  onSubmit={(e) => { e.preventDefault(); commitRename(); }}
+                >
                   <input
-                    {...register('title')}
+                    ref={renameInputRef}
                     className={styles.renameInput}
                     placeholder="New Workspace"
-                    autoFocus
-                    onBlur={handleSubmit(onRenameSubmit)}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onBlur={commitRename}
                     onKeyDown={(e) => {
-                      if (e.key === 'Escape') { e.preventDefault(); handleRenameCancel(); }
+                      if (e.key === 'Escape') { e.preventDefault(); cancelRename(); }
                     }}
                   />
                 </form>
@@ -115,7 +138,7 @@ const WorkspaceSwitcher = () => {
                       <div className={styles.submenu}>
                         <button
                           className={styles.submenuItem}
-                          onClick={() => { setOpenSubmenuId(null); setRenamingId(ws.id); reset({ title: ws.title }); }}
+                          onClick={() => openRename(ws.id, ws.title)}
                         >
                           Rename
                         </button>
