@@ -20,15 +20,15 @@ const SyncStatusIndicator = () => {
     return (
       <div className={styles.wrapper}>
         <a
-          className={styles.githubLink}
+          className={styles.githubButton}
           href="https://github.com/hmiguel/mycelium"
           target="_blank"
           rel="noopener noreferrer"
           title="View on GitHub"
         >
           <FaGithub />
+          <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
         </a>
-        <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
         <button
           className={styles.signInButton}
           onClick={() => redirectToGoogleSignIn(CLIENT_ID)}
@@ -64,15 +64,15 @@ const SyncStatusIndicator = () => {
   return (
     <div className={styles.wrapper}>
       <a
-          className={styles.githubLink}
+          className={styles.githubButton}
           href="https://github.com/hmiguel/mycelium"
           target="_blank"
           rel="noopener noreferrer"
           title="View on GitHub"
         >
           <FaGithub />
+          <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
         </a>
-        <span className={styles.commitSha}>{__COMMIT_SHA__}</span>
       <button
         ref={buttonRef}
         className={styles.button}

@@ -7,23 +7,29 @@
   margin-right: 8px;
 }
 
-.githubLink {
+.githubButton {
   display: flex;
   align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  border-radius: var(--border-radius-lg, 6px);
   color: var(--text-primary-color, #1b1b1f);
-  opacity: 0.45;
+  cursor: pointer;
   font-size: 1rem;
+  height: var(--lg-button-size, 2.25rem);
+  opacity: 0.5;
+  padding: 0 8px;
   text-decoration: none;
 
   &:hover {
+    background-color: var(--button-hover-bg, #f1f0ff);
     opacity: 0.8;
   }
 }
 
 .commitSha {
   font-size: 0.65rem;
-  color: var(--text-primary-color, #1b1b1f);
-  opacity: 0.35;
   font-family: monospace;
   user-select: none;
 }

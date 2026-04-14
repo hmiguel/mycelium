@@ -39,20 +39,16 @@ export const WorkspaceIcon = () => (
 export const PlusIcon = () => {
   return (
     <svg
-      width={24}
-      height={24}
       aria-hidden="true"
       focusable="false"
       role="img"
-      viewBox="0 0 24 24"
+      viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
+      <path strokeWidth="1.25" d="M10 4.167v11.666M4.167 10h11.666" />
     </svg>
   );
 };
