@@ -22,9 +22,17 @@
   padding: 0 8px;
   text-decoration: none;
 
+  &:link,
+  &:visited {
+    color: var(--text-primary-color, #1b1b1f);
+    text-decoration: none;
+  }
+
   &:hover {
     background-color: var(--button-hover-bg, #f1f0ff);
+    color: var(--text-primary-color, #1b1b1f);
     opacity: 0.8;
+    text-decoration: none;
   }
 }
 
