@@ -9,7 +9,7 @@ export function redirectToGoogleSignIn(clientId: string): void {
     response_type: 'code',
     scope: SCOPE,
     access_type: 'offline',
-    prompt: 'consent',
+    prompt: 'select_account',
   });
   window.location.href = `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }
