@@ -1,35 +1,57 @@
 import { Excalidraw, Footer } from '@excalidraw/excalidraw';
 import type { OrderedExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles } from '@excalidraw/excalidraw/types';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import GoogleSignInModal from './components/GoogleSignInModal';
 import ImportModal from './components/ImportButton';
+import ShareButton from './components/ShareButton';
 import SyncStatusIndicator from './components/SyncStatusIndicator';
 import TabBar from './components/TabBar';
 import WorkspaceSwitcher from './components/WorkspaceSwitcher';
 import { useDriveSync } from './hooks/useDriveSync';
 import { useAppStore } from './store';
 import { useExcalidrawFilesStore } from './store/excalidrawFiles';
+import { getExcalidrawBoard } from './utils/import';
 
 function App() {
-  const { tabs, currentTabId, updateTab } = useAppStore();
+  const { tabs, currentTabId, updateTab, createTab, setCurrentTabId } = useAppStore();
   const { setFiles, getFiles } = useExcalidrawFilesStore();
   const { onTabChange } = useDriveSync();
+
+  useEffect(() => {
+    if (!window.location.hash.startsWith('#json=')) return;
+    getExcalidrawBoard(window.location.href)
+      .then((board) => {
+        const newTabId = createTab();
+        updateTab(newTabId, {
+          title: 'Shared board',
+          elements: board.elements,
+          appState: { viewBackgroundColor: board.appState?.viewBackgroundColor },
+        });
+        setCurrentTabId(newTabId);
+        history.replaceState(null, '', window.location.pathname);
+      })
+      .catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const currentTab = tabs.find((t) => t.id === currentTabId) || tabs[0];
+
   const renderTopRightUI = useCallback(() => (
     <>
       <WorkspaceSwitcher />
+      {currentTab && <ShareButton currentTab={currentTab} />}
       <ImportModal />
     </>
-  ), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [currentTab]);
   const footerContent = useMemo(() => (
     <Footer>
       <TabBar />
       <SyncStatusIndicator />
     </Footer>
   ), []);
-
-  const currentTab = tabs.find((t) => t.id === currentTabId) || tabs[0];
 
   const handleOnChange = useCallback(
     (

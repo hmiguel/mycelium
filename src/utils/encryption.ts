@@ -24,6 +24,29 @@ export const getCryptoKey = async (
   );
 };
 
+export const generateEncryptionKey = async (): Promise<string> => {
+  const key = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: ENCRYPTION_KEY_BITS },
+    true,
+    ['encrypt', 'decrypt'],
+  );
+  const jwk = await crypto.subtle.exportKey('jwk', key);
+  return jwk.k!;
+};
+
+export const encryptData = async (
+  iv: Uint8Array,
+  data: Uint8Array | ArrayBuffer,
+  privateKey: string,
+): Promise<ArrayBuffer> => {
+  const key = await getCryptoKey(privateKey, 'encrypt');
+  return crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv as BufferSource },
+    key,
+    data as BufferSource,
+  );
+};
+
 export const decryptData = async (
   iv: Uint8Array,
   encrypted: Uint8Array | ArrayBuffer,

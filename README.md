@@ -58,10 +58,6 @@ VITE_API_URL=https://your-backend-domain
 
 ---
 
-## 🚧 Current Limitations
-
-- [ ] **Link Sharing** – Not possible to share a direct link to a drawing
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
